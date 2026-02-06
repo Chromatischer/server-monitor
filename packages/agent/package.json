@@ -1,0 +1,16 @@
+{
+  "name": "@monitor/agent",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run --watch src/index.ts"
+  },
+  "dependencies": {
+    "@monitor/shared": "workspace:*",
+    "dockerode": "^4.0.6"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.38"
+  }
+}

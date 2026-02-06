@@ -1,0 +1,18 @@
+{
+  "name": "monitor-server",
+  "private": true,
+  "workspaces": [
+    "packages/shared",
+    "packages/dashboard",
+    "packages/agent",
+    "packages/web"
+  ],
+  "scripts": {
+    "dev:dashboard": "bun run --cwd packages/dashboard src/index.ts",
+    "dev:agent": "bun run --cwd packages/agent src/index.ts",
+    "dev:web": "bun run --cwd packages/web dev",
+    "build": "bun run --cwd packages/web build",
+    "dev": "bun run dev:dashboard & bun run dev:web",
+    "monitor": "./scripts/monitor"
+  }
+}

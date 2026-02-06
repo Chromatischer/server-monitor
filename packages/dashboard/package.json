@@ -1,0 +1,15 @@
+{
+  "name": "@monitor/dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "bun run src/index.ts",
+    "dev": "bun run --watch src/index.ts"
+  },
+  "dependencies": {
+    "@monitor/shared": "workspace:*",
+    "elysia": "^1.2.25",
+    "@elysiajs/cors": "^1.2.0",
+    "@elysiajs/static": "^1.2.0"
+  }
+}

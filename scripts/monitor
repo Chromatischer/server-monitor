@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+usage() {
+  cat <<EOF
+Usage: monitor <command> [options]
+
+Commands:
+  add-node    Create a new node (environment) and optionally assign servers
+  add-site    Add a site to monitor for uptime and response time
+  assign      Assign a server to a node (or unassign)
+  ls          List servers, nodes, and sites
+
+Options:
+  -h, --help  Show this help message
+
+Run 'monitor <command> --help' for details on a specific command.
+
+Examples:
+  monitor add-node --name Production --location US-East
+  monitor add-site --name "My App" --url https://example.com --server 1
+  monitor assign --server 1 --node 2
+  monitor ls --all
+EOF
+}
+
+if [[ $# -eq 0 ]]; then
+  usage
+  exit 1
+fi
+
+CMD="$1"
+shift
+
+case "$CMD" in
+  add-node)
+    exec "$SCRIPT_DIR/add-node.sh" "$@"
+    ;;
+  add-site)
+    exec "$SCRIPT_DIR/add-site.sh" "$@"
+    ;;
+  assign)
+    exec "$SCRIPT_DIR/assign.sh" "$@"
+    ;;
+  ls)
+    exec "$SCRIPT_DIR/ls.sh" "$@"
+    ;;
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "Error: Unknown command '$CMD'"
+    echo ""
+    usage
+    exit 1
+    ;;
+esac
