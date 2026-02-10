@@ -7,7 +7,9 @@ import { settingsRoutes } from './routes/settings';
 import { sseRoutes } from './routes/sse';
 import { siteRoutes } from './routes/sites';
 import { nodeRoutes } from './routes/nodes';
+import { updateRoutes } from './routes/updates';
 import { startMonitor } from './services/monitor';
+import { startUpdater } from './services/updater';
 import { pruneOldMetrics } from './db';
 import { resolve, extname } from 'path';
 import { existsSync } from 'fs';
@@ -38,6 +40,7 @@ const app = new Elysia()
   .use(sseRoutes)
   .use(siteRoutes)
   .use(nodeRoutes)
+  .use(updateRoutes)
   // Serve static files and SPA fallback
   .get('/*', ({ params, set }) => {
     const reqPath = (params as any)['*'] || '';
@@ -74,6 +77,9 @@ const app = new Elysia()
 
 // Start heartbeat monitor
 startMonitor();
+
+// Start auto-updater
+startUpdater();
 
 console.log(`[Dashboard] Running at http://localhost:${PORT}`);
 

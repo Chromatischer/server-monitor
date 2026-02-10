@@ -136,7 +136,7 @@ export interface Site {
 export type SiteStatus = 'up' | 'down' | 'unknown';
 
 export interface SSEEvent {
-  event: 'server:update' | 'container:update' | 'alert:new' | 'alert:resolved' | 'metrics:update' | 'site:update' | 'node:update' | 'command:update';
+  event: 'server:update' | 'container:update' | 'alert:new' | 'alert:resolved' | 'metrics:update' | 'site:update' | 'node:update' | 'command:update' | 'update:available' | 'update:started' | 'update:complete' | 'update:failed';
   data: unknown;
 }
 
