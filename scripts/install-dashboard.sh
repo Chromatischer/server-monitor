@@ -88,10 +88,11 @@ Environment=PORT=$port
 Environment=DB_PATH=$db_path
 UNIT_EOF
 
-  # Write auth env vars with printf to preserve special characters in passwords
+  # Write auth env vars with printf to preserve special characters in passwords.
+  # Escape % as %% since systemd interprets % as a specifier.
   if [[ -n "$admin_user" ]]; then
-    printf 'Environment="ADMIN_USERNAME=%s"\n' "$admin_user"
-    printf 'Environment="ADMIN_PASSWORD=%s"\n' "$admin_pass"
+    printf 'Environment="ADMIN_USERNAME=%s"\n' "${admin_user//\%/%%}"
+    printf 'Environment="ADMIN_PASSWORD=%s"\n' "${admin_pass//\%/%%}"
   fi
 
   cat <<UNIT_EOF
