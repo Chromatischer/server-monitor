@@ -1,5 +1,6 @@
 import { createSignal, createRoot } from 'solid-js';
 import type { Alert } from '@monitor/shared';
+import { authStore } from './auth';
 
 function createAlertStore() {
   const [alerts, setAlerts] = createSignal<Alert[]>([]);
@@ -8,6 +9,7 @@ function createAlertStore() {
     try {
       const url = status ? `/api/alerts?status=${status}` : '/api/alerts';
       const res = await fetch(url);
+      if (res.status === 401) { authStore.handleUnauthorized(); return; }
       const data = await res.json();
       setAlerts(data.alerts || []);
     } catch (err) {
@@ -17,7 +19,8 @@ function createAlertStore() {
 
   async function acknowledgeAlert(id: number) {
     try {
-      await fetch(`/api/alerts/${id}/acknowledge`, { method: 'PUT' });
+      const res = await fetch(`/api/alerts/${id}/acknowledge`, { method: 'PUT' });
+      if (res.status === 401) { authStore.handleUnauthorized(); return; }
       setAlerts(prev => prev.map(a => a.id === id ? { ...a, status: 'acknowledged' as const, acknowledged_at: Date.now() } : a));
     } catch (err) {
       console.error('Failed to acknowledge alert:', err);

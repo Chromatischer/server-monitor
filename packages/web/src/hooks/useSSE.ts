@@ -1,4 +1,5 @@
 import { onCleanup, onMount } from 'solid-js';
+import { authStore } from '../stores/auth';
 
 type SSEHandler = (event: string, data: any) => void;
 
@@ -8,6 +9,9 @@ export function useSSE(handler: SSEHandler) {
   let reconnectDelay = 1000;
 
   function connect() {
+    // Pre-check: if not authenticated, don't try to connect
+    if (!authStore.authenticated()) return;
+
     eventSource = new EventSource('/api/sse');
 
     eventSource.onopen = () => {
@@ -16,10 +20,26 @@ export function useSSE(handler: SSEHandler) {
 
     eventSource.onerror = () => {
       eventSource?.close();
-      reconnectTimer = setTimeout(() => {
-        reconnectDelay = Math.min(reconnectDelay * 2, 30000);
-        connect();
-      }, reconnectDelay);
+
+      // If we get an error, check if it's an auth issue
+      // EventSource doesn't expose HTTP status, so verify auth is still valid
+      fetch('/api/auth/check').then(res => {
+        if (res.status === 401 || (res.ok && res.json().then(d => !d.authenticated))) {
+          authStore.handleUnauthorized();
+          return;
+        }
+        // Not an auth issue, reconnect with backoff
+        reconnectTimer = setTimeout(() => {
+          reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+          connect();
+        }, reconnectDelay);
+      }).catch(() => {
+        // Network error, try reconnecting
+        reconnectTimer = setTimeout(() => {
+          reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+          connect();
+        }, reconnectDelay);
+      });
     };
 
     const events = ['server:update', 'container:update', 'alert:new', 'alert:resolved', 'metrics:update', 'site:update', 'node:update', 'command:update'];

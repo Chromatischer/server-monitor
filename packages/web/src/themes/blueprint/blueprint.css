@@ -1113,6 +1113,199 @@
   color: #fff;
 }
 
+/* ── Login Page ── */
+
+.bp-login {
+  --bg: #080d12;
+  --surface-solid: #0c1218;
+  --border: rgba(128, 208, 232, 0.10);
+  --text: #e0eaf0;
+  --text-2: #6a8898;
+  --text-3: #3e5868;
+  --accent: #80d0e8;
+  --item-border: rgba(128, 208, 232, 0.06);
+  --font-theme: 'Inter', system-ui, -apple-system, sans-serif;
+
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  font-family: var(--font-theme);
+  color: var(--text);
+}
+
+.bp-login::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(128, 208, 232, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(128, 208, 232, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+.bp-login-card {
+  position: relative;
+  width: 360px;
+  max-width: 90vw;
+  background: var(--surface-solid);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 32px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  animation: bp-scale-in 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bp-login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+  text-align: center;
+}
+
+.bp-login-subtitle {
+  font-size: 14px;
+  color: var(--text-2);
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.bp-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.bp-login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bp-login-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-2);
+}
+
+.bp-login-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 200ms, box-shadow 200ms;
+  box-sizing: border-box;
+}
+
+.bp-login-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(128, 208, 232, 0.1);
+}
+
+.bp-login-error {
+  padding: 10px 14px;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 8px;
+  color: #f87171;
+  font-size: 13px;
+}
+
+.bp-login-submit {
+  padding: 11px 20px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--bg);
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 200ms, background 200ms;
+  margin-top: 4px;
+}
+
+.bp-login-submit:hover:not(:disabled) {
+  opacity: 0.85;
+  background: #6dd8ef;
+}
+
+.bp-login-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── API Key display in Settings ── */
+
+.bp-settings-apikey-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-settings-apikey-value {
+  flex: 1;
+  padding: 10px 14px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 12px;
+  font-family: 'JetBrains Mono', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.bp-settings-copy-btn {
+  padding: 10px 14px;
+  background: rgba(128, 208, 232, 0.06);
+  border: 1px solid rgba(128, 208, 232, 0.12);
+  border-radius: 8px;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 200ms, color 200ms, border-color 200ms;
+}
+
+.bp-settings-copy-btn:hover {
+  background: rgba(128, 208, 232, 0.12);
+  color: var(--accent);
+  border-color: rgba(128, 208, 232, 0.25);
+}
+
+.bp-settings-logout-btn {
+  width: 100%;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  color: #f87171;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 200ms, border-color 200ms;
+}
+
+.bp-settings-logout-btn:hover {
+  background: rgba(248, 113, 113, 0.18);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
 /* ── Responsive ── */
 
 @media (max-width: 640px) {

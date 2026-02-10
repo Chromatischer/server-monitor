@@ -2,35 +2,46 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: install-dashboard.sh [--port <port>] [--db <path>] [--user <user>]"
+  echo "Usage: install-dashboard.sh [--port <port>] [--db <path>] [--admin-user <user>] [--admin-pass <pass>] [--user <user>]"
   echo ""
   echo "Install the monitor dashboard as a systemd service."
   echo ""
   echo "Options:"
-  echo "  --port    Port to listen on                  default: 3000"
-  echo "  --db      SQLite database path               default: /opt/monitor-server/monitor.db"
-  echo "  --user    User to run the service as          default: current user"
-  echo "  --help    Show this help"
+  echo "  --port         Port to listen on                  default: 3000"
+  echo "  --db           SQLite database path               default: /opt/monitor-server/monitor.db"
+  echo "  --admin-user   Admin username for web login       enables authentication"
+  echo "  --admin-pass   Admin password for web login       required with --admin-user"
+  echo "  --user         User to run the service as          default: current user"
+  echo "  --help         Show this help"
   echo ""
   echo "Examples:"
-  echo "  sudo ./scripts/install-dashboard.sh"
-  echo "  sudo ./scripts/install-dashboard.sh --port 80 --user sysadmin"
+  echo "  sudo ./scripts/install-dashboard.sh --admin-user admin --admin-pass secret"
+  echo "  sudo ./scripts/install-dashboard.sh --port 80 --admin-user admin --admin-pass secret"
   exit 0
 }
 
 port="3000"
 db_path="/opt/monitor-server/monitor.db"
+admin_user=""
+admin_pass=""
 run_user="$(logname 2>/dev/null || echo "$USER")"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --port)  port="$2"; shift 2 ;;
-    --db)    db_path="$2"; shift 2 ;;
-    --user)  run_user="$2"; shift 2 ;;
-    --help|-h) usage ;;
+    --port)        port="$2"; shift 2 ;;
+    --db)          db_path="$2"; shift 2 ;;
+    --admin-user)  admin_user="$2"; shift 2 ;;
+    --admin-pass)  admin_pass="$2"; shift 2 ;;
+    --user)        run_user="$2"; shift 2 ;;
+    --help|-h)     usage ;;
     *) echo "Unknown option: $1"; usage ;;
   esac
 done
+
+if [[ -n "$admin_user" && -z "$admin_pass" ]]; then
+  echo "Error: --admin-pass is required when --admin-user is set"
+  exit 1
+fi
 
 if [[ $EUID -ne 0 ]]; then
   echo "Error: this script must be run as root (use sudo)"
@@ -58,6 +69,12 @@ if [[ "$port" -lt 1024 ]]; then
   cap_line="AmbientCapabilities=CAP_NET_BIND_SERVICE"
 fi
 
+auth_lines=""
+if [[ -n "$admin_user" ]]; then
+  auth_lines="Environment=ADMIN_USERNAME=$admin_user
+Environment=ADMIN_PASSWORD=$admin_pass"
+fi
+
 run_group=$(id -gn "$run_user")
 
 cat > /etc/systemd/system/monitor-dashboard.service <<EOF
@@ -70,6 +87,7 @@ Type=simple
 WorkingDirectory=$workdir
 Environment=PORT=$port
 Environment=DB_PATH=$db_path
+$auth_lines
 ExecStart=$bun_path run packages/dashboard/src/index.ts
 Restart=always
 RestartSec=5
@@ -88,6 +106,7 @@ echo "Dashboard service installed and started"
 echo "  Port: $port"
 echo "  DB:   $db_path"
 echo "  User: $run_user"
+echo "  Auth: ${admin_user:+enabled (user: $admin_user)}${admin_user:-disabled}"
 echo "  URL:  http://$(hostname -I | awk '{print $1}'):$port"
 echo ""
 echo "Commands:"

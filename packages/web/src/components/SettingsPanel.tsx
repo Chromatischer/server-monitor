@@ -1,16 +1,20 @@
-import { createSignal, Show } from 'solid-js';
+import { createSignal, Show, onMount } from 'solid-js';
 import { settingsStore } from '../stores/settings';
+import { authStore } from '../stores/auth';
 
 export default function SettingsPanel() {
   const [webhookUrl, setWebhookUrl] = createSignal('');
   const [testResult, setTestResult] = createSignal<string | null>(null);
   const [testing, setTesting] = createSignal(false);
+  const [apiKey, setApiKey] = createSignal<string | null>(null);
+  const [copied, setCopied] = createSignal(false);
 
   const isOpen = () => settingsStore.settingsOpen();
 
   function init() {
     const s = settingsStore.settings();
     setWebhookUrl(s.discord_webhook_url || '');
+    authStore.fetchApiKey().then(key => setApiKey(key));
   }
 
   async function handleTestWebhook() {
@@ -19,6 +23,18 @@ export default function SettingsPanel() {
     const success = await settingsStore.testWebhook(webhookUrl());
     setTestResult(success ? 'Webhook sent successfully!' : 'Failed to send webhook');
     setTesting(false);
+  }
+
+  async function handleCopyApiKey() {
+    const key = apiKey();
+    if (!key) return;
+    try {
+      await navigator.clipboard.writeText(key);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+    }
   }
 
   return (
@@ -30,6 +46,27 @@ export default function SettingsPanel() {
             <h2>Settings</h2>
             <button class="bp-settings-close" onClick={() => settingsStore.setSettingsOpen(false)}>&times;</button>
           </div>
+
+          <section class="bp-settings-section">
+            <h3>Security</h3>
+
+            <Show when={apiKey()}>
+              <label class="bp-settings-label">Agent API Key</label>
+              <div class="bp-settings-apikey-row">
+                <div class="bp-settings-apikey-value">{apiKey()}</div>
+                <button class="bp-settings-copy-btn" onClick={handleCopyApiKey}>
+                  {copied() ? 'Copied' : 'Copy'}
+                </button>
+              </div>
+              <p style={{ 'font-size': '11px', color: '#3e5868', 'margin-top': '6px', 'margin-bottom': '16px' }}>
+                Use this key when installing agents with --api-key
+              </p>
+            </Show>
+
+            <button class="bp-settings-logout-btn" onClick={() => authStore.logout()}>
+              Sign out
+            </button>
+          </section>
 
           <section class="bp-settings-section">
             <h3>Discord Notifications</h3>

@@ -2,15 +2,25 @@ import type { MetricsPayload, RegisterRequest, RegisterResponse, MetricsResponse
 
 export class Reporter {
   private baseUrl: string;
+  private apiKey: string | undefined;
 
-  constructor(dashboardUrl: string) {
+  constructor(dashboardUrl: string, apiKey?: string) {
     this.baseUrl = dashboardUrl.replace(/\/$/, '');
+    this.apiKey = apiKey;
+  }
+
+  private getHeaders(): Record<string, string> {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+    return headers;
   }
 
   async register(info: RegisterRequest): Promise<RegisterResponse> {
     const res = await fetch(`${this.baseUrl}/api/servers/register`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: this.getHeaders(),
       body: JSON.stringify(info),
     });
 
@@ -24,7 +34,7 @@ export class Reporter {
   async sendMetrics(payload: MetricsPayload): Promise<MetricsResponse> {
     const res = await fetch(`${this.baseUrl}/api/metrics`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: this.getHeaders(),
       body: JSON.stringify(payload),
     });
 
@@ -39,7 +49,7 @@ export class Reporter {
   async reportCommandStatus(cmdId: string, status: string): Promise<void> {
     const res = await fetch(`${this.baseUrl}/api/commands/${cmdId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: this.getHeaders(),
       body: JSON.stringify({ status }),
     });
 

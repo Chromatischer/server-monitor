@@ -94,4 +94,13 @@ CREATE INDEX IF NOT EXISTS idx_containers_server ON containers(server_id);
 CREATE INDEX IF NOT EXISTS idx_sites_server ON sites(server_id);
 CREATE INDEX IF NOT EXISTS idx_commands_server_pending ON commands(server_id, status);
 CREATE INDEX IF NOT EXISTS idx_servers_node ON servers(node_id);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 `;

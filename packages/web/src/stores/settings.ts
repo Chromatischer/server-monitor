@@ -1,5 +1,6 @@
 import { createSignal, createRoot } from 'solid-js';
 import type { ThemeName } from '@monitor/shared';
+import { authStore } from './auth';
 
 function createSettingsStore() {
   const [settings, setSettings] = createSignal<Record<string, string>>({});
@@ -9,6 +10,7 @@ function createSettingsStore() {
   async function fetchSettings() {
     try {
       const res = await fetch('/api/settings');
+      if (res.status === 401) { authStore.handleUnauthorized(); return; }
       const data = await res.json();
       setSettings(data.settings || {});
     } catch (err) {
@@ -18,11 +20,12 @@ function createSettingsStore() {
 
   async function updateSetting(key: string, value: string) {
     try {
-      await fetch('/api/settings', {
+      const res = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key, value }),
       });
+      if (res.status === 401) { authStore.handleUnauthorized(); return; }
       setSettings(prev => ({ ...prev, [key]: value }));
     } catch (err) {
       console.error('Failed to update setting:', err);

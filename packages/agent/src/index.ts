@@ -7,8 +7,13 @@ import { hostname } from 'os';
 
 const DASHBOARD_URL = process.env.DASHBOARD_URL || 'http://localhost:3000';
 const SERVER_NAME = process.env.SERVER_NAME || hostname();
+const API_KEY = process.env.API_KEY;
 
-const reporter = new Reporter(DASHBOARD_URL);
+if (!API_KEY) {
+  console.warn('[Agent] WARNING: No API_KEY set. Requests will not be authenticated.');
+}
+
+const reporter = new Reporter(DASHBOARD_URL, API_KEY);
 
 let serverId: string | null = null;
 let checkInterval = 10;
