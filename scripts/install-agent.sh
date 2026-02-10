@@ -88,12 +88,13 @@ WorkingDirectory=$workdir
 Environment=DASHBOARD_URL=$dashboard_url
 UNIT_EOF
 
-  # Write sensitive values with printf to preserve special characters
+  # Write sensitive values with printf to preserve special characters.
+  # Escape % as %% since systemd interprets % as a specifier.
   if [[ -n "$server_name" ]]; then
-    printf 'Environment="SERVER_NAME=%s"\n' "$server_name"
+    printf 'Environment="SERVER_NAME=%s"\n' "${server_name//\%/%%}"
   fi
   if [[ -n "$api_key" ]]; then
-    printf 'Environment="API_KEY=%s"\n' "$api_key"
+    printf 'Environment="API_KEY=%s"\n' "${api_key//\%/%%}"
   fi
 
   cat <<UNIT_EOF
