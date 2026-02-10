@@ -2,29 +2,32 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: install-agent.sh --dashboard <url> [--user <user>]"
+  echo "Usage: install-agent.sh --dashboard <url> [--api-key <key>] [--user <user>]"
   echo ""
   echo "Install the monitor agent as a systemd service."
   echo ""
   echo "Options:"
   echo "  --dashboard  Dashboard URL (required)          e.g. http://192.168.1.50:3000"
+  echo "  --api-key    Agent API key                     from dashboard settings"
   echo "  --name       Override server name               default: hostname"
   echo "  --user       User to run the service as         default: current user"
   echo "  --help       Show this help"
   echo ""
   echo "Examples:"
-  echo "  sudo ./scripts/install-agent.sh --dashboard http://192.168.1.50:3000"
+  echo "  sudo ./scripts/install-agent.sh --dashboard http://192.168.1.50:3000 --api-key mk_abc123"
   echo "  sudo ./scripts/install-agent.sh --dashboard http://monitor.local --name web-01"
   exit 0
 }
 
 dashboard_url=""
 server_name=""
+api_key=""
 run_user="$(logname 2>/dev/null || echo "$USER")"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dashboard) dashboard_url="$2"; shift 2 ;;
+    --api-key)   api_key="$2"; shift 2 ;;
     --name)      server_name="$2"; shift 2 ;;
     --user)      run_user="$2"; shift 2 ;;
     --help|-h)   usage ;;
@@ -74,6 +77,11 @@ if [[ -n "$server_name" ]]; then
   name_line="Environment=SERVER_NAME=$server_name"
 fi
 
+apikey_line=""
+if [[ -n "$api_key" ]]; then
+  apikey_line="Environment=API_KEY=$api_key"
+fi
+
 run_group=$(id -gn "$run_user")
 
 cat > /etc/systemd/system/monitor-agent.service <<EOF
@@ -86,6 +94,7 @@ Type=simple
 WorkingDirectory=$workdir
 Environment=DASHBOARD_URL=$dashboard_url
 $name_line
+$apikey_line
 ExecStart=$bun_path run packages/agent/src/index.ts
 Restart=always
 RestartSec=5

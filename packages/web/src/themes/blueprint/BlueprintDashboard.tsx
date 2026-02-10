@@ -510,7 +510,7 @@ export default function BlueprintDashboard() {
       const res = await fetch('/api/sites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, url, server_id: serverId }),
+        body: JSON.stringify({ name, url, serverId }),
       });
       if (res.ok) {
         setSetupMsg({ type: 'success', text: `Site "${name}" added`, cli: `bun run monitor add-site --name "${name}" --url ${url} --server ${serverId}` });

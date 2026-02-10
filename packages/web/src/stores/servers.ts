@@ -1,5 +1,6 @@
 import { createSignal, createRoot, createMemo } from 'solid-js';
 import type { Server, Container, Site, Node, Command } from '@monitor/shared';
+import { authStore } from './auth';
 
 function createServerStore() {
   const [servers, setServers] = createSignal<Server[]>([]);
@@ -41,6 +42,10 @@ function createServerStore() {
         fetch('/api/sites'),
         fetch('/api/nodes'),
       ]);
+      if (serverRes.status === 401 || siteRes.status === 401 || nodeRes.status === 401) {
+        authStore.handleUnauthorized();
+        return;
+      }
       const serverData = await serverRes.json();
       const siteData = await siteRes.json();
       const nodeData = await nodeRes.json();
@@ -63,6 +68,7 @@ function createServerStore() {
   async function fetchServerDetail(id: string) {
     try {
       const res = await fetch(`/api/servers/${id}`);
+      if (res.status === 401) { authStore.handleUnauthorized(); return null; }
       const data = await res.json();
       if (data.containers) {
         setContainers(prev => ({ ...prev, [id]: data.containers }));
@@ -80,6 +86,7 @@ function createServerStore() {
   async function fetchNodeDetail(id: string) {
     try {
       const res = await fetch(`/api/nodes/${id}`);
+      if (res.status === 401) { authStore.handleUnauthorized(); return null; }
       return await res.json();
     } catch (err) {
       console.error('Failed to fetch node detail:', err);

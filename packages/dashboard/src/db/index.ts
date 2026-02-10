@@ -238,4 +238,45 @@ export function getCommand(id: string): Command | null {
   return (db.prepare('SELECT * FROM commands WHERE id = ?').get(id) as Command) || null;
 }
 
+// --- Sessions ---
+
+export function createSession(token: string, username: string, expiresAt: number): void {
+  db.prepare('INSERT INTO sessions (token, username, created_at, expires_at) VALUES (?, ?, ?, ?)').run(token, username, Date.now(), expiresAt);
+}
+
+export function getSession(token: string): { token: string; username: string; created_at: number; expires_at: number } | null {
+  const row = db.prepare('SELECT * FROM sessions WHERE token = ? AND expires_at > ?').get(token, Date.now()) as any;
+  return row || null;
+}
+
+export function deleteSession(token: string): void {
+  db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+}
+
+export function pruneExpiredSessions(): void {
+  db.prepare('DELETE FROM sessions WHERE expires_at < ?').run(Date.now());
+}
+
+// --- Auth Setup ---
+
+export function getApiKey(): string {
+  const existing = getSetting('api_key');
+  if (existing) return existing;
+  const key = `mk_${crypto.randomUUID().replace(/-/g, '')}`;
+  setSetting('api_key', key);
+  return key;
+}
+
+export function validateApiKey(key: string): boolean {
+  const stored = getSetting('api_key');
+  if (!stored) return false;
+  // Constant-time comparison to prevent timing attacks
+  if (key.length !== stored.length) return false;
+  let result = 0;
+  for (let i = 0; i < key.length; i++) {
+    result |= key.charCodeAt(i) ^ stored.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 export { db };

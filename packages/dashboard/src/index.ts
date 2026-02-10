@@ -8,14 +8,33 @@ import { sseRoutes } from './routes/sse';
 import { siteRoutes } from './routes/sites';
 import { nodeRoutes } from './routes/nodes';
 import { updateRoutes } from './routes/updates';
+import { authRoutes } from './routes/auth';
 import { startMonitor } from './services/monitor';
 import { startUpdater } from './services/updater';
-import { pruneOldMetrics } from './db';
+import {
+  isAuthConfigured,
+  validateSession,
+  validateAgentApiKey,
+  getSessionTokenFromCookie,
+  startSessionPruner,
+} from './services/auth';
+import { pruneOldMetrics, getApiKey } from './db';
 import { resolve, extname } from 'path';
 import { existsSync } from 'fs';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const STATIC_DIR = resolve(import.meta.dir, '../public');
+
+// --- Auth startup validation ---
+if (!isAuthConfigured()) {
+  console.error('[Dashboard] WARNING: ADMIN_USERNAME and ADMIN_PASSWORD environment variables are not set.');
+  console.error('[Dashboard] Authentication is DISABLED. Set these env vars to enable auth.');
+  console.error('[Dashboard]   ADMIN_USERNAME=admin ADMIN_PASSWORD=<strong-password> bun run ...');
+}
+
+// Ensure API key is generated on first run
+const apiKey = getApiKey();
+console.log(`[Dashboard] Agent API key: ${apiKey}`);
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -30,8 +49,54 @@ const MIME_TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 
+// Auth paths that don't require authentication
+const AUTH_EXEMPT_PATHS = new Set(['/api/auth/login', '/api/auth/check']);
+
+// Agent paths that require API key instead of session
+const AGENT_PATHS = ['/api/servers/register', '/api/metrics', '/api/commands'];
+
+function isAgentPath(path: string): boolean {
+  return AGENT_PATHS.some(p => path === p || path.startsWith(p + '/'));
+}
+
 const app = new Elysia()
-  .use(cors())
+  .use(cors({
+    credentials: true,
+  }))
+  // Auth routes (no middleware needed - they handle their own auth)
+  .use(authRoutes)
+  // Global auth middleware for /api/* routes
+  .onBeforeHandle(({ request, set }) => {
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    // Skip auth for non-API routes (static files, SPA)
+    if (!path.startsWith('/api/')) return;
+
+    // Skip auth for exempt paths (login, check)
+    if (AUTH_EXEMPT_PATHS.has(path)) return;
+
+    // If auth is not configured, allow everything (dev mode)
+    if (!isAuthConfigured()) return;
+
+    // Agent paths: require API key
+    if (isAgentPath(path)) {
+      const authHeader = request.headers.get('authorization') || undefined;
+      if (!validateAgentApiKey(authHeader)) {
+        set.status = 401;
+        return { error: 'Invalid or missing API key' };
+      }
+      return; // API key valid
+    }
+
+    // All other API routes: require session cookie
+    const cookie = request.headers.get('cookie') || undefined;
+    const token = getSessionTokenFromCookie(cookie);
+    if (!token || !validateSession(token)) {
+      set.status = 401;
+      return { error: 'Unauthorized' };
+    }
+  })
   .use(serverRoutes)
   .use(commandRoutes)
   .use(metricRoutes)
@@ -80,6 +145,9 @@ startMonitor();
 
 // Start auto-updater
 startUpdater();
+
+// Start session cleanup
+startSessionPruner();
 
 console.log(`[Dashboard] Running at http://localhost:${PORT}`);
 
