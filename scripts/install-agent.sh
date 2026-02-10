@@ -72,19 +72,12 @@ elif [[ -S /var/run/docker.sock ]]; then
   echo "Created docker group and added $run_user"
 fi
 
-name_line=""
-if [[ -n "$server_name" ]]; then
-  name_line="Environment=SERVER_NAME=$server_name"
-fi
-
-apikey_line=""
-if [[ -n "$api_key" ]]; then
-  apikey_line="Environment=API_KEY=$api_key"
-fi
-
 run_group=$(id -gn "$run_user")
 
-cat > /etc/systemd/system/monitor-agent.service <<EOF
+service_file=/etc/systemd/system/monitor-agent.service
+
+{
+  cat <<UNIT_EOF
 [Unit]
 Description=Monitor Agent
 After=network.target docker.service
@@ -93,8 +86,17 @@ After=network.target docker.service
 Type=simple
 WorkingDirectory=$workdir
 Environment=DASHBOARD_URL=$dashboard_url
-$name_line
-$apikey_line
+UNIT_EOF
+
+  # Write sensitive values with printf to preserve special characters
+  if [[ -n "$server_name" ]]; then
+    printf 'Environment="SERVER_NAME=%s"\n' "$server_name"
+  fi
+  if [[ -n "$api_key" ]]; then
+    printf 'Environment="API_KEY=%s"\n' "$api_key"
+  fi
+
+  cat <<UNIT_EOF
 ExecStart=$bun_path run packages/agent/src/index.ts
 Restart=always
 RestartSec=5
@@ -104,7 +106,8 @@ $docker_group
 
 [Install]
 WantedBy=multi-user.target
-EOF
+UNIT_EOF
+} > "$service_file"
 
 systemctl daemon-reload
 systemctl enable --now monitor-agent
