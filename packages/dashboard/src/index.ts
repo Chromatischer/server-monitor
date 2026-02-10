@@ -7,10 +7,8 @@ import { settingsRoutes } from './routes/settings';
 import { sseRoutes } from './routes/sse';
 import { siteRoutes } from './routes/sites';
 import { nodeRoutes } from './routes/nodes';
-import { updateRoutes } from './routes/updates';
 import { authRoutes } from './routes/auth';
 import { startMonitor } from './services/monitor';
-import { startUpdater } from './services/updater';
 import {
   isAuthConfigured,
   validateSession,
@@ -34,7 +32,10 @@ if (!isAuthConfigured()) {
 
 // Ensure API key is generated on first run
 const apiKey = getApiKey();
-console.log(`[Dashboard] Agent API key: ${apiKey}`);
+const maskedApiKey = apiKey.length <= 8
+  ? '***'
+  : `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}`;
+console.log(`[Dashboard] Agent API key: ${maskedApiKey}`);
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -105,7 +106,6 @@ const app = new Elysia()
   .use(sseRoutes)
   .use(siteRoutes)
   .use(nodeRoutes)
-  .use(updateRoutes)
   // Serve static files and SPA fallback
   .get('/*', ({ params, set }) => {
     const reqPath = (params as any)['*'] || '';
@@ -142,9 +142,6 @@ const app = new Elysia()
 
 // Start heartbeat monitor
 startMonitor();
-
-// Start auto-updater
-startUpdater();
 
 // Start session cleanup
 startSessionPruner();
