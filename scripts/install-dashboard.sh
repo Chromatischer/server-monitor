@@ -69,15 +69,14 @@ if [[ "$port" -lt 1024 ]]; then
   cap_line="AmbientCapabilities=CAP_NET_BIND_SERVICE"
 fi
 
-auth_lines=""
-if [[ -n "$admin_user" ]]; then
-  auth_lines="Environment=ADMIN_USERNAME=$admin_user
-Environment=ADMIN_PASSWORD=$admin_pass"
-fi
-
 run_group=$(id -gn "$run_user")
 
-cat > /etc/systemd/system/monitor-dashboard.service <<EOF
+service_file=/etc/systemd/system/monitor-dashboard.service
+
+# Build unit file — use a block that avoids passing passwords through heredoc
+# expansion, which mangles special characters like $, `, \, etc.
+{
+  cat <<UNIT_EOF
 [Unit]
 Description=Monitor Dashboard
 After=network.target
@@ -87,7 +86,15 @@ Type=simple
 WorkingDirectory=$workdir
 Environment=PORT=$port
 Environment=DB_PATH=$db_path
-$auth_lines
+UNIT_EOF
+
+  # Write auth env vars with printf to preserve special characters in passwords
+  if [[ -n "$admin_user" ]]; then
+    printf 'Environment="ADMIN_USERNAME=%s"\n' "$admin_user"
+    printf 'Environment="ADMIN_PASSWORD=%s"\n' "$admin_pass"
+  fi
+
+  cat <<UNIT_EOF
 ExecStart=$bun_path run packages/dashboard/src/index.ts
 Restart=always
 RestartSec=5
@@ -97,7 +104,8 @@ $cap_line
 
 [Install]
 WantedBy=multi-user.target
-EOF
+UNIT_EOF
+} > "$service_file"
 
 systemctl daemon-reload
 systemctl enable --now monitor-dashboard
