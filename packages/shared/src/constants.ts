@@ -14,8 +14,6 @@ export const DEFAULT_SETTINGS: Record<string, string> = {
   alert_on_container_stop: 'true',
   high_cpu_threshold: '90',
   high_memory_threshold: '90',
-  auto_update_enabled: 'false',
-  auto_update_interval_minutes: '30',
 };
 
 export const AGENT_VERSION = '1.0.0';
