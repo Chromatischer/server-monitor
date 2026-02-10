@@ -43,7 +43,14 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-bun_path=$(su - "$run_user" -c 'which bun' 2>/dev/null || true)
+user_home=$(eval echo "~$run_user")
+bun_path=""
+for candidate in "$user_home/.bun/bin/bun" /usr/local/bin/bun /usr/bin/bun; do
+  if [[ -x "$candidate" ]]; then
+    bun_path="$candidate"
+    break
+  fi
+done
 if [[ -z "$bun_path" ]]; then
   echo "Error: bun not found for user $run_user"
   echo "Install it: curl -fsSL https://bun.sh/install | bash"
